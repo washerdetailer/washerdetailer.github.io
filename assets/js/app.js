@@ -98,38 +98,31 @@ $(document).ready(function () {
       "assets/img/cars/cars33-3.jpg",
    ]
 
-   // Fonction pour précharger toutes les images (renvoie une promesse)
-   function preloadImages(images) {
-      return Promise.all(images.map(src => {
-         return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = src;
-            img.onload = resolve;
-            img.onerror = reject;
-         });
-      }));
-   }
+   let current = 0;
 
-   function backgroundSlideOptimized(images, container, step) {
-      let index = 0;
+   function swapBackground() {
+      const nextIndex = (current + 1) % pictures_home.length;
+      const nextImage = pictures_home[nextIndex];
 
-      const changeBackground = () => {
-         container.style.backgroundImage = `url(${images[index]})`;
-         index = (index + 1) % images.length;
-         setTimeout(() => requestAnimationFrame(changeBackground), step);
+      // Précharge dans le pseudo-élément
+      const img = new Image();
+      img.src = nextImage;
+      img.onload = () => {
+         home.style.setProperty("--next-bg", `url(${nextImage})`);
+         home.classList.add("fade");
+         setTimeout(() => {
+            home.style.backgroundImage = `url(${nextImage})`;
+            home.classList.remove("fade");
+            current = nextIndex;
+         }, 1000); // durée du fondu
       };
-
-      changeBackground();
    }
 
-   // Précharger puis lancer le carrousel
-   preloadImages(pictures_home)
-      .then(() => {
-         backgroundSlideOptimized(pictures_home, home_container, 5000);
-      })
-      .catch(err => {
-         console.error("Erreur lors du chargement des images :", err);
-      });
+   // Appliquer la variable CSS
+   home.style.backgroundImage = `url(${pictures_home[current]})`;
+   document.documentElement.style.setProperty("--next-bg", "");
+
+   setInterval(swapBackground, 5000);
 
 
    // SCROLL-UP BUTTON
