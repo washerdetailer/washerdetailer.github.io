@@ -81,20 +81,13 @@ $(document).ready(function () {
    const svg = document.getElementById('logo_svg_1');
    const paths = svg.querySelectorAll('path');
    let currentColor = '#E21F25';
+
    function toggleColor() {
       const newColor = currentColor === '#E21F25' ? 'black' : '#E21F25';
       paths.forEach(path => path.setAttribute('fill', newColor));
       currentColor = newColor;
    }
    setInterval(toggleColor, 5000);
-
-   // PRELOAD PICTURES
-   const preloadImages = (images) => {
-      images.slice(0, 2).forEach((src) => { // Charge uniquement les 2 premières images
-         const img = new Image();
-         img.src = src;
-      });
-   };
 
    // HOME BACKGROUND CAROUSEL
    const home_container = document.getElementById("home");
@@ -104,17 +97,40 @@ $(document).ready(function () {
       "assets/img/cars/cars34-4.jpg",
       "assets/img/cars/cars33-3.jpg",
    ]
-   const backgroundSlideOptimized = (images, container, step) => {
+
+   // Fonction pour précharger toutes les images (renvoie une promesse)
+   function preloadImages(images) {
+      return Promise.all(images.map(src => {
+         return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = resolve;
+            img.onerror = reject;
+         });
+      }));
+   }
+
+   function backgroundSlideOptimized(images, container, step) {
       let index = 0;
+
       const changeBackground = () => {
          container.style.backgroundImage = `url(${images[index]})`;
          index = (index + 1) % images.length;
          setTimeout(() => requestAnimationFrame(changeBackground), step);
       };
+
       changeBackground();
-   };
-   preloadImages(pictures_home);
-   backgroundSlideOptimized(pictures_home, home_container, 5000);
+   }
+
+   // Précharger puis lancer le carrousel
+   preloadImages(pictures_home)
+      .then(() => {
+         backgroundSlideOptimized(pictures_home, home_container, 5000);
+      })
+      .catch(err => {
+         console.error("Erreur lors du chargement des images :", err);
+      });
+
 
    // SCROLL-UP BUTTON
    $(window).scroll(function () {
